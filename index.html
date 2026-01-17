@@ -98,7 +98,7 @@ const prizes = [
   { name: "Small", probability: 35, color: "#ffcc00", img: "small.png" },
   { name: "Medium", probability: 10, color: "#ff9900", img: "medium.png" },
   { name: "Large", probability: 3, color: "#ff4d6d", img: "large.png" },
-  { name: "Big", probability: 2, color: "#00bfff", img: "https://i.imgur.com/eTOZ3pi.png" }
+  { name: "Big", probability: 2, color: "#00bfff", img: "https://i.imgur.com/WTH6dtx.png" }
 ];
 
 // preload images
@@ -121,19 +121,41 @@ function drawWheel() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   prizes.forEach(p => {
+    const midAngle = (p.startAngle + p.endAngle) / 2;
+    const sliceAngle = p.endAngle - p.startAngle;
+
+    // Draw slice
     ctx.beginPath();
     ctx.moveTo(radius, radius);
     ctx.arc(radius, radius, radius, p.startAngle, p.endAngle);
+    ctx.closePath();
     ctx.fillStyle = p.color;
     ctx.fill();
 
-    if (p.imageObj?.complete) {
-      const midAngle = (p.startAngle + p.endAngle) / 2;
-      const imgSize = radius * 0.3;
-      const x = radius + Math.cos(midAngle) * radius * 0.55 - imgSize / 2;
-      const y = radius + Math.sin(midAngle) * radius * 0.55 - imgSize / 2;
-      ctx.drawImage(p.imageObj, x, y, imgSize, imgSize);
-    }
+    // ⛔ Skip images for very small slices
+    if (!p.imageObj || sliceAngle < 0.25) return;
+
+    ctx.save();
+
+    // ✂️ Clip to slice
+    ctx.beginPath();
+    ctx.moveTo(radius, radius);
+    ctx.arc(radius, radius, radius, p.startAngle, p.endAngle);
+    ctx.closePath();
+    ctx.clip();
+
+    // 📐 Dynamic image size based on slice
+    const imgSize = Math.min(
+      radius * 0.45,
+      sliceAngle * radius * 0.8
+    );
+
+    const imgX = radius + Math.cos(midAngle) * radius * 0.55 - imgSize / 2;
+    const imgY = radius + Math.sin(midAngle) * radius * 0.55 - imgSize / 2;
+    ctx.globalAlpha = 0.95;
+    ctx.drawImage(p.imageObj, imgX, imgY, imgSize, imgSize);
+
+    ctx.restore();
   });
 }
 
