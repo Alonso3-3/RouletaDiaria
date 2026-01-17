@@ -62,7 +62,6 @@
     const ctx = canvas.getContext('2d');
     const spinButton = document.getElementById('spinButton');
     const resultDiv = document.getElementById('result');
-    const radius = canvas.width / 2;
 
     // Prize table
     const prizes = [
@@ -76,6 +75,7 @@
     // Preload images
     prizes.forEach(p => {
       if(p.img){
+        const midAngle = (p.startAngle + p.endAngle) / 2;
         const image = new Image();
         image.src = p.img; // Replace with your candy images
         p.imageObj = image;
