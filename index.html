@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Candy Roulette</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #fffae6;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      color: #ff4d6d;
+      margin-top: 20px;
+    }
+    #wheel {
+      margin: 30px auto;
+      width: 300px;
+      height: 300px;
+      border: 10px solid #ff4d6d;
+      border-radius: 50%;
+      position: relative;
+      background: conic-gradient(
+        #ffd700 0deg 50deg,
+        #ff4d6d 50deg 86deg,
+        #ffa500 86deg 98deg,
+        #00bfff 98deg 100deg
+      );
+      transition: transform 4s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    #pointer {
+      width: 0; 
+      height: 0; 
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-bottom: 30px solid #333;
+      margin: 0 auto;
+      position: relative;
+      top: -20px;
+    }
+    #spinButton {
+      margin-top: 20px;
+      padding: 15px 30px;
+      font-size: 18px;
+      background-color: #ff4d6d;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      min-height: 40px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>🍬 Candy Roulette 🍬</h1>
+  <div id="pointer"></div>
+  <div id="wheel"></div>
+  <button id="spinButton">Spin!</button>
+  <div id="result"></div>
+
+  <script>
+    const wheel = document.getElementById('wheel');
+    const resultDiv = document.getElementById('result');
+    const spinButton = document.getElementById('spinButton');
+
+    // One spin per day logic
+    const today = new Date().toDateString();
+    if(localStorage.getItem('lastSpin') === today){
+      spinButton.disabled = true;
+      resultDiv.textContent = "You already spun today! Come back tomorrow.";
+    }
+
+    spinButton.addEventListener('click', () => {
+      spinButton.disabled = true; // Prevent double clicks
+
+      // Spin animation
+      const spins = Math.floor(Math.random() * 5) + 5; // 5-9 full rotations
+      const degrees = spins * 360 + Math.floor(Math.random() * 360);
+      wheel.style.transform = `rotate(${degrees}deg)`;
+
+      // Determine prize based on probabilities
+      setTimeout(() => {
+        const rand = Math.random() * 100;
+        let prize = "";
+
+        if(rand < 50){
+          prize = "No prize today. Try again tomorrow!";
+        } else if(rand < 92){ // 50% + 42% = 92%
+          prize = "🎉 You won a small exclusive candy! ($0.06)";
+        } else if(rand < 99){ // 92% -> 99%
+          prize = "🎉 You won a medium candy! ($0.20)";
+        } else { // 1% chance
+          prize = "🎉 Jackpot! You won a BIG candy! ($1.20)";
+        }
+
+        resultDiv.textContent = prize;
+        localStorage.setItem('lastSpin', today); // Mark as played
+      }, 4000); // Match animation duration
+    });
+  </script>
+</body>
+</html>
+
