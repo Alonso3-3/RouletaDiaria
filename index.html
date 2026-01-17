@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Candy Roulette</title>
+  <title>Ruleta Diaria</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      background: #fffae6;
+      background: #fff6e6;
       margin: 0;
       padding: 0;
     }
@@ -16,30 +16,10 @@
       color: #ff4d6d;
       margin-top: 20px;
     }
-    #wheel {
+    canvas {
       margin: 30px auto;
-      width: 300px;
-      height: 300px;
-      border: 10px solid #ff4d6d;
-      border-radius: 50%;
-      position: relative;
-      background: conic-gradient(
-        #ffd700 0deg 50deg,
-        #ff4d6d 50deg 86deg,
-        #ffa500 86deg 98deg,
-        #00bfff 98deg 100deg
-      );
-      transition: transform 4s cubic-bezier(0.25, 1, 0.5, 1);
-    }
-    #pointer {
-      width: 0; 
-      height: 0; 
-      border-left: 15px solid transparent;
-      border-right: 15px solid transparent;
-      border-bottom: 30px solid #333;
-      margin: 0 auto;
-      position: relative;
-      top: -20px;
+      display: block;
+      background: #fff6e6;
     }
     #spinButton {
       margin-top: 20px;
@@ -58,55 +38,144 @@
       min-height: 40px;
       color: #333;
     }
+    #pointer {
+      width: 0; 
+      height: 0; 
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-bottom: 30px solid #333;
+      margin: 0 auto;
+      position: relative;
+      top: -40px;
+    }
   </style>
 </head>
 <body>
   <h1>🍬 Candy Roulette 🍬</h1>
   <div id="pointer"></div>
-  <div id="wheel"></div>
+  <canvas id="wheel" width="300" height="300"></canvas>
   <button id="spinButton">Spin!</button>
   <div id="result"></div>
 
   <script>
-    const wheel = document.getElementById('wheel');
-    const resultDiv = document.getElementById('result');
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
     const spinButton = document.getElementById('spinButton');
+    const resultDiv = document.getElementById('result');
+    const radius = canvas.width / 2;
 
-    // One spin per day logic
+    // Prize table
+    const prizes = [
+      {name: "Nothing", probability: 50, color: "#ddd", img: null},
+      {name: "Small Candy ($0.06)", probability: 35, color: "#ffcc00", img: "small.png"},
+      {name: "Medium Candy ($0.15)", probability: 10, color: "#ff9900", img: "medium.png"},
+      {name: "Large Candy ($0.50)", probability: 3, color: "#ff4d6d", img: "large.png"},
+      {name: "Big Candy ($0.60)", probability: 2, color: "#00bfff", img: https://imgur.com/a/qjod6U4}
+    ];
+
+    // Preload images
+    prizes.forEach(p => {
+      if(p.img){
+        const image = new Image();
+        image.src = p.img; // Replace with your candy images
+        p.imageObj = image;
+      }
+    });
+
+    // Compute start/end angles
+    let currentAngle = 0;
+    prizes.forEach(p => {
+      p.startAngle = currentAngle;
+      p.endAngle = currentAngle + (p.probability / 100) * 2 * Math.PI;
+      currentAngle = p.endAngle;
+    });
+
+    // Draw wheel
+    function drawWheel() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      prizes.forEach(p => {
+        ctx.beginPath();
+        ctx.moveTo(radius, radius);
+        ctx.arc(radius, radius, radius, p.startAngle, p.endAngle);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        ctx.stroke();
+
+        // Draw text
+        const midAngle = (p.startAngle + p.endAngle) / 2;
+        const textX = radius + Math.cos(midAngle) * radius * 0.65;
+        const textY = radius + Math.sin(midAngle) * radius * 0.65;
+        ctx.fillStyle = "#000";
+        ctx.font = "12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(p.name, textX, textY);
+
+        // Draw image if exists
+        if(p.imageObj && p.imageObj.complete){
+          const imgSize = 30;
+          const imgX = radius + Math.cos(midAngle) * radius * 0.5 - imgSize/2;
+          const imgY = radius + Math.sin(midAngle) * radius * 0.5 - imgSize/2;
+          ctx.drawImage(p.imageObj, imgX, imgY, imgSize, imgSize);
+        }
+      });
+    }
+
+    drawWheel();
+
+    // One spin per day
     const today = new Date().toDateString();
     if(localStorage.getItem('lastSpin') === today){
       spinButton.disabled = true;
-      resultDiv.textContent = "You already spun today! Come back tomorrow.";
+      resultDiv.textContent = "Ya Has jugado Hoy! Vuelve Mañana!";
     }
 
     spinButton.addEventListener('click', () => {
-      spinButton.disabled = true; // Prevent double clicks
+      spinButton.disabled = true;
+      resultDiv.textContent = "Spinning...";
+
+      // Determine winning prize
+      const rand = Math.random() * 100;
+      let accumulated = 0;
+      let winningPrize = null;
+      for(let p of prizes){
+        accumulated += p.probability;
+        if(rand <= accumulated){
+          winningPrize = p;
+          break;
+        }
+      }
 
       // Spin animation
       const spins = Math.floor(Math.random() * 5) + 5; // 5-9 full rotations
-      const degrees = spins * 360 + Math.floor(Math.random() * 360);
-      wheel.style.transform = `rotate(${degrees}deg)`;
+      const winningAngle = (winningPrize.startAngle + winningPrize.endAngle)/2;
+      const totalRotation = spins * 2 * Math.PI + (2*Math.PI - winningAngle); // counter-clockwise so pointer lands
+      let start = null;
 
-      // Determine prize based on probabilities
-      setTimeout(() => {
-        const rand = Math.random() * 100;
-        let prize = "";
-
-        if(rand < 50){
-          prize = "No prize today. Try again tomorrow!";
-        } else if(rand < 92){ // 50% + 42% = 92%
-          prize = "🎉 You won a small exclusive candy! ($0.06)";
-        } else if(rand < 99){ // 92% -> 99%
-          prize = "🎉 You won a medium candy! ($0.20)";
-        } else { // 1% chance
-          prize = "🎉 Jackpot! You won a BIG candy! ($1.20)";
+      function animate(timestamp){
+        if(!start) start = timestamp;
+        const progress = (timestamp - start)/4000; // 4s animation
+        const angle = progress < 1 ? totalRotation * easeOutCubic(progress) : totalRotation;
+        ctx.save();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.translate(radius, radius);
+        ctx.rotate(angle);
+        ctx.translate(-radius, -radius);
+        drawWheel();
+        ctx.restore();
+        if(progress < 1) requestAnimationFrame(animate);
+        else {
+          resultDiv.textContent = `You won: ${winningPrize.name}`;
+          localStorage.setItem('lastSpin', today);
         }
+      }
 
-        resultDiv.textContent = prize;
-        localStorage.setItem('lastSpin', today); // Mark as played
-      }, 4000); // Match animation duration
+      function easeOutCubic(t){ return (--t)*t*t+1; }
+
+      requestAnimationFrame(animate);
     });
+
   </script>
 </body>
 </html>
+
 
