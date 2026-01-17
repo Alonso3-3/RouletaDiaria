@@ -131,7 +131,7 @@
 
     spinButton.addEventListener('click', () => {
       spinButton.disabled = true;
-      resultDiv.textContent = "Spinning...";
+      resultDiv.textContent = "Girando...";
 
       // Determine winning prize
       const rand = Math.random() * 100;
@@ -164,7 +164,7 @@
         ctx.restore();
         if(progress < 1) requestAnimationFrame(animate);
         else {
-          resultDiv.textContent = `You won: ${winningPrize.name}`;
+          resultDiv.textContent = `Ganaste: ${winningPrize.name}!`;
           localStorage.setItem('lastSpin', today);
         }
       }
