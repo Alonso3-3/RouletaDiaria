@@ -53,7 +53,7 @@
 <body>
   <h1>🍬 Ruleta Diaria 🍬</h1>
   <div id="pointer"></div>
-  <canvas id="wheel" width="300" height="300"></canvas>
+  <canvas id="wheel"></canvas>
   <button id="spinButton">Gira!</button>
   <div id="result"></div>
 
@@ -89,6 +89,22 @@
       p.endAngle = currentAngle + (p.probability / 100) * 2 * Math.PI;
       currentAngle = p.endAngle;
     });
+    function resizeCanvas() {
+      const size = Math.min(window.innerWidth * 0.9, 420);
+      const dpr = window.devicePixelRatio || 1;
+    
+      canvas.width = size * dpr;
+      canvas.height = size * dpr;
+      canvas.style.width = size + "px";
+      canvas.style.height = size + "px";
+    
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    
+    const radius = canvas.width / (2 * (window.devicePixelRatio || 1));
 
     // Draw wheel
     function drawWheel() {
@@ -101,20 +117,11 @@
         ctx.fill();
         ctx.stroke();
 
-        // Draw text
-        const midAngle = (p.startAngle + p.endAngle) / 2;
-        const textX = radius + Math.cos(midAngle) * radius * 0.65;
-        const textY = radius + Math.sin(midAngle) * radius * 0.65;
-        ctx.fillStyle = "#000";
-        ctx.font = "12px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText(p.name, textX, textY);
-
         // Draw image if exists
         if(p.imageObj && p.imageObj.complete){
-          const imgSize = 30;
-          const imgX = radius + Math.cos(midAngle) * radius * 0.5 - imgSize/2;
-          const imgY = radius + Math.sin(midAngle) * radius * 0.5 - imgSize/2;
+          const imgSize = radius * 0.28;
+          const imgX = radius + Math.cos(midAngle) * radius * 0.55 - imgSize / 2;
+          const imgY = radius + Math.sin(midAngle) * radius * 0.55 - imgSize / 2;
           ctx.drawImage(p.imageObj, imgX, imgY, imgSize, imgSize);
         }
       });
